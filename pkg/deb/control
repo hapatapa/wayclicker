@@ -4,6 +4,6 @@ Section: base
 Priority: optional
 Vcs-Git: https://github.com/hapatapa/wayclicker
 Architecture: %ARCH%
-Depends: libx11-6, libxi6
+Depends: libgtk-3-0, libwayland-client0, libx11-6, libxi6
 Maintainer: hapatapa
 Description: Fast gui autoclicker for linux

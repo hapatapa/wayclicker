@@ -5,14 +5,31 @@ on:
 
 name: Create Release
 
+x-deps: &x-deps
+  build-essential meson ninja-build pkg-config libgtk-3-dev libx11-dev libxi-dev libxtst-dev
+  libwayland-dev libwayland-bin libgdk-pixbuf2.0-dev libfuse2 squashfs-tools desktop-file-utils
+  patchelf fakeroot strace wget curl dpkg-dev file
+
 jobs:
   amd64_build:
     name: Setup and Build for amd64
     runs-on: ubuntu-latest
-    container: robiot/wayclicker
+    container: ubuntu:22.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apt-get update -y
+          apt-get install -y *x-deps
+
+      - name: Install appimagetool
+        run: |
+          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O /opt/appimagetool
+          cd /opt/; chmod +x appimagetool; sed -i 's|AI\x02|\x00\x00\x00|' appimagetool; ./appimagetool --appimage-extract
+          mv /opt/squashfs-root /opt/appimagetool.AppDir
+          ln -s /opt/appimagetool.AppDir/AppRun /usr/local/bin/appimagetool
 
       - name: Build x64
         run: |
@@ -24,7 +41,7 @@ jobs:
           make appimg TARGET_ARCH=amd64
           cp pkg/AppImage/*.AppImage outputs/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: output-artifact
           path: outputs
@@ -35,9 +52,9 @@ jobs:
     needs: amd64_build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: output-artifact
           path: outputs
@@ -46,7 +63,7 @@ jobs:
         uses: uraimo/run-on-arch-action@v2.1.1
         with:
           arch: armv7
-          distro: ubuntu18.04
+          distro: ubuntu22.04
 
           githubToken: ${{ github.token }}
 
@@ -55,13 +72,7 @@ jobs:
 
           install: |
             apt-get update -y
-            apt-get install -y meson pkg-config gtk+-3.0 libx11-dev libxi-dev libxtst-dev \
-              python3-pip python3-setuptools patchelf desktop-file-utils libgdk-pixbuf2.0-dev fakeroot strace wget \
-              build-essential manpages-dev software-properties-common
-
-            add-apt-repository ppa:ubuntu-toolchain-r/test -y
-            apt-get install -y gcc-11
-            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 30
+            apt-get install -y *x-deps
 
             wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-armhf.AppImage -O /opt/appimagetool
             cd /opt/; chmod +x appimagetool; sed -i 's|AI\x02|\x00\x00\x00|' appimagetool; ./appimagetool --appimage-extract
@@ -75,12 +86,11 @@ jobs:
             make appimg TARGET_ARCH=armhf
             cp pkg/AppImage/*.AppImage outputs/
 
-      # Lots of repeated stuff, but well :\
       - name: Build aarch64
         uses: uraimo/run-on-arch-action@v2.1.1
         with:
           arch: aarch64
-          distro: ubuntu18.04
+          distro: ubuntu22.04
 
           githubToken: ${{ github.token }}
 
@@ -89,13 +99,7 @@ jobs:
 
           install: |
             apt-get update -y
-            apt-get install -y meson pkg-config gtk+-3.0 libx11-dev libxi-dev libxtst-dev \
-              python3-pip python3-setuptools patchelf desktop-file-utils libgdk-pixbuf2.0-dev fakeroot strace wget \
-              build-essential manpages-dev software-properties-common
-
-            add-apt-repository ppa:ubuntu-toolchain-r/test -y
-            apt-get install -y gcc-11
-            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 30
+            apt-get install -y *x-deps
 
             wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-aarch64.AppImage -O /opt/appimagetool
             cd /opt/; chmod +x appimagetool; sed -i 's|AI\x02|\x00\x00\x00|' appimagetool; ./appimagetool --appimage-extract
