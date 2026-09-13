@@ -62,10 +62,10 @@ jobs:
           path: outputs
 
       - name: Build ARM
-        uses: uraimo/run-on-arch-action@v2.1.1
+        uses: uraimo/run-on-arch-action@v2.5.0
         with:
           arch: armv7
-          distro: ubuntu22.04
+          distro: ubuntu20.04
 
           githubToken: ${{ github.token }}
 
@@ -78,6 +78,11 @@ jobs:
               libx11-dev libxi-dev libxtst-dev libwayland-dev libwayland-bin \
               libgdk-pixbuf2.0-dev libfuse2 squashfs-tools desktop-file-utils patchelf \
               fakeroot strace wget curl dpkg-dev file
+
+            add-apt-repository ppa:ubuntu-toolchain-r/test -y
+            apt-get update -y
+            apt-get install -y gcc-11
+            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 30
 
             wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-armhf.AppImage -O /opt/appimagetool
             cd /opt/; chmod +x appimagetool; sed -i 's|AI\x02|\x00\x00\x00|' appimagetool; ./appimagetool --appimage-extract
@@ -92,7 +97,7 @@ jobs:
             cp pkg/AppImage/*.AppImage outputs/
 
       - name: Build aarch64
-        uses: uraimo/run-on-arch-action@v2.1.1
+        uses: uraimo/run-on-arch-action@v2.5.0
         with:
           arch: aarch64
           distro: ubuntu22.04
