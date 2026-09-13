@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=XClicker
-GenericName=XClicker
+Name=WayClicker
+GenericName=WayClicker
 Comment=A blazing fast gui autoclicker for linux
-Exec=xclicker
-Icon=xclicker
+Exec=wayclicker
+Icon=wayclicker
 Terminal=false
 Type=Application
 Categories=Utility;

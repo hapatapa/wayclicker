@@ -1,11 +1,13 @@
 #include <gtk/gtk.h>
 #include <sys/time.h>
-#include "xclicker-app.h"
+#include "wayclicker-app.h"
 #include "mainwin.h"
 #include "x11api.h"
+#include "input.h"
 #include "settings.h"
 #include "utils.h"
 #include "config.h"
+#include "globalshortcut.h"
 
 enum ClickTypes
 {
@@ -117,11 +119,18 @@ gboolean toggle_buttons()
 void click_handler(gpointer *data)
 {
 	struct click_opts *args = data;
-	Display *display = get_display();
+	struct Input *input = input_open();
 	int count = 0;
 	gboolean is_holding = FALSE;
 
-	gboolean using_xevent = config->use_xevent;
+	if (input == NULL)
+	{
+		xapp_error("Opening input backend", -1);
+		isClicking = FALSE;
+		g_idle_add(toggle_buttons, NULL);
+		g_free(data);
+		return;
+	}
 
 	int hold_type_ms = 0;
 	if (args->hold_time == TRUE)
@@ -132,7 +141,7 @@ void click_handler(gpointer *data)
 	while (isClicking)
 	{
 		if (args->custom_location)
-			move_to(display, args->custom_x, args->custom_y);
+			input_move_to(input, args->custom_x, args->custom_y);
 
 		// reassigning a new hold time
 		if (args->hold_time == TRUE && args->holdtime_type==HOLDTIME_TYPE_RANDOM)
@@ -143,22 +152,22 @@ void click_handler(gpointer *data)
 		switch (args->click_type)
 		{
 		case CLICK_TYPE_SINGLE:
-			if (click(display, args->button, using_xevent, hold_type_ms) == FALSE)
+			if (input_click(input, args->button, hold_type_ms) == FALSE)
 				xapp_error("Sending click", -1);
 			break;
 		case CLICK_TYPE_DOUBLE:
-			if (click(display, args->button, using_xevent, hold_type_ms) == FALSE)
+			if (input_click(input, args->button, hold_type_ms) == FALSE)
 				xapp_error("Sending click", -1);
 
 			usleep(150000); // 150 milliseconds
 
-			if (click(display, args->button, using_xevent, hold_type_ms) == FALSE)
+			if (input_click(input, args->button, hold_type_ms) == FALSE)
 				xapp_error("Sending click", -1);
 			break;
 		case CLICK_TYPE_HOLD:
 			if (is_holding == FALSE) // Don't re-send mouse_down if already successfully sent
 			{
-				if (mouse_event(display, args->button, using_xevent, MOUSE_EVENT_PRESS))
+				if (input_mouse_event(input, args->button, MOUSE_EVENT_PRESS))
 					is_holding = TRUE;
 				else
 					xapp_error("Sending mouse down", -1);
@@ -188,12 +197,12 @@ void click_handler(gpointer *data)
 	// If it was a mouse hold, then release the button
 	if (args->click_type == CLICK_TYPE_HOLD)
 	{
-		if (mouse_event(display, args->button, config->use_xevent, MOUSE_EVENT_RELEASE) == FALSE)
+		if (input_mouse_event(input, args->button, MOUSE_EVENT_RELEASE) == FALSE)
 			xapp_error("Sending mouse down", -1);
 	}
 
 	g_free(data);
-	XCloseDisplay(display);
+	input_close(input);
 	g_idle_add(toggle_buttons, NULL);
 }
 
@@ -235,6 +244,12 @@ gboolean set_coords(gpointer *data)
 void get_cursor_pos_click_handler()
 {
 	Display *display = get_display();
+	if (display == NULL)
+	{
+		isChoosingLocation = FALSE;
+		return;
+	}
+
 	mask_config(display, MASK_MOUSE_PRESS);
 
 	while (isChoosingLocation)
@@ -276,11 +291,22 @@ gboolean toggle_get_active()
  */
 void get_cursor_pos_handler()
 {
-	Display *display = get_display();
+	struct Input *input = input_open();
+	if (input == NULL)
+	{
+		isChoosingLocation = FALSE;
+		g_idle_add(toggle_get_active, NULL);
+		return;
+	}
+
 	while (isChoosingLocation)
 	{
 		int i_cur_x, i_cur_y;
-		get_cursor_coords(display, &i_cur_x, &i_cur_y);
+		if (input_get_cursor(input, &i_cur_x, &i_cur_y) == FALSE)
+		{
+			usleep(50000);
+			continue;
+		}
 		// before allocating, get how long the numbers would be as a string
 		int x_len = snprintf(NULL, 0, "%d", i_cur_x);
 		int y_len = snprintf(NULL, 0, "%d", i_cur_y);
@@ -298,7 +324,7 @@ void get_cursor_pos_handler()
 		free(cur_x);
 		free(cur_y);
 	}
-	XCloseDisplay(display);
+	input_close(input);
 	g_idle_add(toggle_get_active, NULL);
 }
 
@@ -548,9 +574,26 @@ void mouse_button_entry_changed()
 	g_key_file_save_to_file(config_gfile, configpath, NULL);
 }
 
+/**
+ * Called from the native Wayland global-shortcut listener thread whenever the
+ * hotkey combo is pressed or released.
+ */
+void toggle_clicking(int evtype);
+
+void wayland_hotkey_handler(int evtype)
+{
+    g_debug("wayland_hotkey_handler: evtype=%d choosing=%d", evtype, isChoosingHotkey);
+    if (isChoosingHotkey == TRUE)
+        return;
+
+	toggle_clicking(evtype);
+}
+
 void toggle_clicking(int evtype)
 {
-	if (strcmp(gtk_entry_get_text(GTK_ENTRY(mainappwindow.hotkey_type_entry)), "Normal"))
+    g_debug("toggle_clicking: evtype=%d isClicking=%d hotkey_type='%s'",
+            evtype, isClicking, gtk_entry_get_text(GTK_ENTRY(mainappwindow.hotkey_type_entry)));
+    if (strcmp(gtk_entry_get_text(GTK_ENTRY(mainappwindow.hotkey_type_entry)), "Normal"))
 	{
 		if (evtype == KeyPress)
 		{
@@ -577,6 +620,9 @@ void toggle_clicking(int evtype)
 void get_start_stop_key_handler()
 {
 	Display *display = get_display();
+	if (display == NULL)
+		return; // No global hotkeys without an X11 display
+
 	mask_config(display, MASK_KEYBOARD_PRESS | MASK_KEYBOARD_RELEASE);
 
 	gboolean isHolding1 = FALSE;
@@ -616,8 +662,16 @@ void get_start_stop_key_handler()
 void set_start_stop_button_hotkey_text()
 {
 	Display *display = get_display();
+
 	const char *start_text_1 = "Start";
 	const char *stop_text_1 = "Stop";
+
+	if (display == NULL)
+	{
+		gtk_button_set_label(GTK_BUTTON(mainappwindow.start_button), start_text_1);
+		gtk_button_set_label(GTK_BUTTON(mainappwindow.stop_button), stop_text_1);
+		return;
+	}
 
 	// Button2 should always be defined
 	const char *button_2_key = keycode_to_string(display, config->button2);
@@ -729,7 +783,13 @@ static void main_app_window_init(MainAppWindow *win)
 	set_start_stop_button_hotkey_text();
 	mainappwindow_import_config();
 
-	g_thread_new("get_start_stop_key_handler", get_start_stop_key_handler, NULL);
+	// Start listening for the global hotkey. Prefer the native Wayland
+	// implementation so the hotkey works no matter which window has focus,
+	// and fall back to the X11 listener otherwise.
+	if (globalshortcut_start(wayland_hotkey_handler))
+		globalshortcut_apply_hotkey(config->button1, config->button2);
+	else
+		g_thread_new("get_start_stop_key_handler", get_start_stop_key_handler, NULL);
 }
 
 /**
@@ -738,7 +798,7 @@ static void main_app_window_init(MainAppWindow *win)
  */
 static void main_app_window_class_init(MainAppWindowClass *class)
 {
-	gtk_widget_class_set_template_from_resource(GTK_WIDGET_CLASS(class), "/res/ui/xclicker-window.ui");
+	gtk_widget_class_set_template_from_resource(GTK_WIDGET_CLASS(class), "/res/ui/wayclicker-window.ui");
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), insert_handler);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), start_clicked);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), stop_clicked);
@@ -785,7 +845,7 @@ static void main_app_window_class_init(MainAppWindowClass *class)
 /**
  * Open up the main_app_window.
  */
-MainAppWindow *main_app_window_new(XClickerApp *app)
+MainAppWindow *main_app_window_new(WayClickerApp *app)
 {
 	return g_object_new(MAIN_APP_WINDOW_TYPE, "application", app, NULL);
 }

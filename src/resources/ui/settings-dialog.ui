@@ -111,8 +111,9 @@ milliseconds interval.</property>
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">With this enabled, XClicker will not click on       
-gtk applications.</property>
+                    <property name="label" translatable="yes">X11 only, ignored on Wayland (clicks are simulated
+natively through the compositor). When enabled,
+WayClicker will not click on GTK applications.</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -144,7 +145,7 @@ gtk applications.</property>
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Use XEvent</property>
+                <property name="label" translatable="yes">Use XEvent (X11 only)</property>
               </object>
             </child>
           </object>
@@ -278,12 +279,12 @@ gtk applications.</property>
             </child>
             <child>
               <object class="GtkLinkButton">
-                <property name="label" translatable="yes">XClicker</property>
+                <property name="label" translatable="yes">WayClicker</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
                 <property name="relief">none</property>
-                <property name="uri">https://github.com/robiot/xclicker</property>
+                <property name="uri">https://github.com/hapatapa/wayclicker</property>
               </object>
               <packing>
                 <property name="left-attach">0</property>

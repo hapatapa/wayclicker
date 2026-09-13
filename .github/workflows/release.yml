@@ -9,7 +9,7 @@ jobs:
   amd64_build:
     name: Setup and Build for amd64
     runs-on: ubuntu-latest
-    container: robiot/xclicker
+    container: robiot/wayclicker
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

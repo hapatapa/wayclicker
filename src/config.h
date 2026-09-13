@@ -3,7 +3,7 @@
 #include <gtk/gtk.h>
 
 /**
- * Represents all options you can see when starting xclicker.
+ * Represents all options you can see when starting wayclicker.
  * kindof sus atm because the options are updated live,
  * but other options are just updated on start and whenever you open settings
  * please dont use config->(anything other than options) unless it is for initialisation

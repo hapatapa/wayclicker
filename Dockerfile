@@ -1,4 +1,4 @@
-# https://hub.docker.com/r/robiot/xclicker
+# https://hub.docker.com/r/hapatapa/wayclicker
 FROM ubuntu:18.04
 
 RUN apt-get update -y

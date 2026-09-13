@@ -1,6 +1,6 @@
 ---
 name: "Bug report"
-about: Create a bug report for XClicker.
+about: Create a bug report for WayClicker.
 title: ''
 labels: bug
 assignees: ''
@@ -18,7 +18,7 @@ assignees: ''
 #### OS / ENVIRONMENT:
  * Operating system:
  * De or Wm:
- * XClicker version:
+ * WayClicker version:
 
 #### STEPS TO REPRODUCE:
 1.

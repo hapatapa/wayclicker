@@ -11,7 +11,7 @@ struct Config *config;
 const char *get_config_file_path()
 {
     const char *config_path = g_get_user_config_dir();
-    const char *file_name = "/xclicker.conf";
+    const char *file_name = "/wayclicker.conf";
 
     if (!opendir(config_path))
     {
@@ -21,7 +21,7 @@ const char *get_config_file_path()
 
     char *config_file_path = malloc(strlen(config_path) + strlen(file_name) + 1);
     strcpy(config_file_path, config_path);
-    strcat(config_file_path, "/xclicker.conf");
+    strcat(config_file_path, "/wayclicker.conf");
 
     return config_file_path;
 }
@@ -46,7 +46,8 @@ void config_init()
 
     config = config_read_from_file();
 
-    XCloseDisplay(display);
+    if (display)
+        XCloseDisplay(display);
 }
 
 void save_and_populate_config()
@@ -73,7 +74,16 @@ void load_start_stop_keybinds(struct Config *config)
 
     // Initial values
     config->button1 = -1;
-    config->button2 = XKeysymToKeycode(display, XK_F8);
+    config->button2 = 0;
+
+    if (display)
+    {
+        config->button2 = XKeysymToKeycode(display, XK_F8);
+    }
+    else
+    {
+        g_printerr("No X11 display available: global hotkeys are disabled.\n");
+    }
 
     if (button_1 != 0 && button_1)
         config->button1 = button_1;
@@ -81,7 +91,8 @@ void load_start_stop_keybinds(struct Config *config)
     if (button_2 != 0 && button_2)
         config->button2 = button_2;
 
-    XCloseDisplay(display);
+    if (display)
+        XCloseDisplay(display);
 }
 
 struct Config *config_read_from_file()

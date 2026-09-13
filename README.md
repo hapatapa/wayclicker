@@ -1,24 +1,22 @@
 <p align="center">
-	<img src="https://raw.githubusercontent.com/robiot/xclicker/master/img/banner.png" alt="XClicker" />
+  <img src="https://raw.githubusercontent.com/hapatapa/wayclicker/master/img/banner.png" alt="WayClicker" width="400" />
 </p>
 
 <p align="center">
-	<img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/robiot/xclicker/total?label=GitHub%20Downloads" />
-  	<a href="https://aur.archlinux.org/packages/xclicker"><img alt="AUR version" src="https://img.shields.io/aur/version/xclicker" /></a>
-  	<img alt="GitHub Issues" src="https://img.shields.io/github/issues/robiot/XClicker.svg" />
-  	<img alt="GitHub Contributors" src="https://img.shields.io/github/contributors/robiot/XClicker" /></a>
+  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/hapatapa/wayclicker" />
+  <img alt="GitHub Issues" src="https://img.shields.io/github/issues/hapatapa/wayclicker" />
+  <img alt="GitHub License" src="https://img.shields.io/github/license/hapatapa/wayclicker" />
 </p>
 
-## What is XClicker?
-XClicker is an open-source, easy to use, feature-rich, **blazing fast** Autoclicker for linux desktops using x11.
+## What is WayClicker?
 
-![Example image](https://raw.githubusercontent.com/robiot/xclicker/master/img/example.png)
-*v1.4.0*
+WayClicker is a **Wayland-first** fork of [XClicker](https://github.com/robiot/xclicker) — a fast, easy to use, feature-rich autoclicker for Linux desktops.
 
-![forthebadge](https://forthebadge.com/images/badges/made-with-c.svg) [![forthebadge](https://forthebadge.com/images/badges/check-it-out.svg)](https://xclicker.xyz/downloads)
+Unlike the original, WayClicker simulates input **natively on Wayland** using the [`zwlr-virtual-pointer-unstable-v1`](https://wayland.app/protocols/wlr-virtual-pointer-unstable-v1) protocol, and registers global hotkeys through the compositor (Hyprland's native `hyprland-global-shortcuts-v1`), so it works without `XWayland` or accessibility hacks. On sessions without a Wayland virtual pointer it falls back to classic X11 (XTest) simulation.
 
 ## Main features
- * Fairly simple layout;
+
+ * Simple, clean layout;
  * Safe mode, to protect from unwanted behaviour;
  * Autoclick with a specified amount of time between each click;
  * Choose mouse button [Left/Right/Middle];
@@ -30,29 +28,46 @@ XClicker is an open-source, easy to use, feature-rich, **blazing fast** Autoclic
  * Click while holding hotkey down;
  * Start / Stop with a custom hotkey;
 
-### How much cps?
-The highest I have got with it was around **750cps**, but that was still with 1 millisecond interval.\
-With 0 millisecond interval, the focused application may freeze.
-
 ## Building
 
-After cloning the repository, you only have to run this one command. The executable will be placed in **./build/release/src/xclicker**.
+The only dependency that is not part of a normal build is `libwayland-dev` (required for the Wayland input backend).
+
 ```
 $ make release
 ```
 
+The executable will be placed in **./build/release/src/wayclicker**.
+
+A meson build also works directly:
+
+```
+$ meson build && ninja -C build
+```
+
 ## Installing
-Check out the [Installation Guide](https://github.com/robiot/xclicker/wiki/Installation)
 
-## All repositories
-- XClicker: https://github.com/robiot/xclicker
-- Web: https://github.com/robiot/xclicker-web
+```
+$ make install
+```
 
-## Contributing
-All contributions are welcome <3.
-Check out the [Contibuting Guide](https://github.com/robiot/xclicker/wiki/Contibuting) to see how to setup your enviroment.
+(see the `Makefile` for packaging targets: Deb, AppImage, uninstall.)
+
+## Wayland global hotkeys
+
+On Hyprland, WayClicker uses the native global-shortcuts portal/protocol. After starting the app, the shortcut is registered as:
+
+```
+wayclicker:wayclicker-toggle
+```
+
+The default hotkey is F8 and can be changed from the app's settings dialog.
+
+## Credits
+
+WayClicker is a fork of [XClicker](https://github.com/robiot/xclicker) by [Elliot (Robiot)](https://github.com/robiot), rewritten for native Wayland input and compositor-based global hotkeys.
 
 ## License
-XClicker is licensed under GPL-3.0 LICENSE.
+
+WayClicker is licensed under GPL-3.0.
 
 Dependencies are licensed by their own.

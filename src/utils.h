@@ -12,7 +12,7 @@
 void xapp_error(const char *when, int code);
 
 /**
- * @brief Set the icon to XClickers icon for a window
+ * @brief Set the icon to WayClickers icon for a window
  * 
  * @param window 
  */

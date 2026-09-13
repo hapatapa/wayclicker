@@ -1,9 +1,9 @@
-Package: xclicker
+Package: wayclicker
 Version: %VERSION%
 Section: base
 Priority: optional
-Vcs-Git: https://github.com/robiot/rustcat
+Vcs-Git: https://github.com/hapatapa/wayclicker
 Architecture: %ARCH%
 Depends: libx11-6, libxi6
-Maintainer: robiot
+Maintainer: hapatapa
 Description: Fast gui autoclicker for linux
